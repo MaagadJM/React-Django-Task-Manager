@@ -31,6 +31,13 @@ export const api = {
       body: JSON.stringify({ username, password }),
     }),
 
+  register: (username, password, confirm_password) =>
+    fetch('http://127.0.0.1:8000/api/auth/register/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ username, password, confirm_password }),
+    }),
+
   getTasks:   ()           => request('/tasks/'),
   createTask: (data)       => request('/tasks/',       { method: 'POST',   body: JSON.stringify(data) }),
   updateTask: (id, data)   => request(`/tasks/${id}/`, { method: 'PATCH',  body: JSON.stringify(data) }),

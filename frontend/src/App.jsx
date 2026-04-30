@@ -1,19 +1,22 @@
 import { useState, useEffect } from 'react'
 import Login from './components/Login'
+import Register from './components/Register'
 import { api } from './api'
 
 export default function App() {
-  const [user,    setUser]    = useState(localStorage.getItem('username'))
-  const [tasks,   setTasks]   = useState([])
-  const [input,   setInput]   = useState('')
+  const [user, setUser] = useState(localStorage.getItem('username'))
+  const [showReg, setShowReg] = useState(false)
+  const [loginMsg, setLoginMsg] = useState('')
+  const [tasks, setTasks] = useState([])
+  const [input, setInput] = useState('')
   const [loading, setLoading] = useState(true)
-  const [error,   setError]   = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => { if (user) fetchTasks() }, [user])
 
   async function fetchTasks() {
     try {
-      const res  = await api.getTasks()
+      const res = await api.getTasks()
       const data = await res.json()
       setTasks(data)
     } catch {
@@ -26,14 +29,14 @@ export default function App() {
   async function addTask(e) {
     e.preventDefault()
     if (!input.trim()) return
-    const res  = await api.createTask({ title: input.trim() })
+    const res = await api.createTask({ title: input.trim() })
     const data = await res.json()
     setTasks([data, ...tasks])
     setInput('')
   }
 
   async function toggleTask(task) {
-    const res  = await api.updateTask(task.id, { completed: !task.completed })
+    const res = await api.updateTask(task.id, { completed: !task.completed })
     const data = await res.json()
     setTasks(tasks.map(t => (t.id === task.id ? data : t)))
   }
@@ -51,9 +54,27 @@ export default function App() {
   }
 
   // ── Not logged in ─────────────────────────────────────────────
-  if (!user) return <Login onLogin={setUser} />
+  if (!user) {
+    if (showReg) {
+      return (
+        <Register
+          onGoToLogin={(registered) => {
+            setShowReg(false)
+            if (registered) setLoginMsg('Account created! Wait for admin approval, then sign in.')
+          }}
+        />
+      )
+    }
+    return (
+      <Login
+        onLogin={setUser}
+        successMessage={loginMsg}
+        onGoToRegister={() => { setLoginMsg(''); setShowReg(true) }}
+      />
+    )
+  }
 
-  const done    = tasks.filter(t =>  t.completed).length
+  const done = tasks.filter(t => t.completed).length
   const pending = tasks.filter(t => !t.completed).length
 
   // ── Logged in ─────────────────────────────────────────────────
@@ -61,10 +82,10 @@ export default function App() {
     <div style={styles.card}>
 
       {/* Header with logout */}
-      <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom: 4 }}>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
         <h1 style={styles.heading}>📋 Task Manager</h1>
-        <div style={{ display:'flex', alignItems:'center', gap:'1rem' }}>
-          <span style={{ color:'#64748b', fontSize:'.9rem' }}>👤 {user}</span>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+          <span style={{ color: '#64748b', fontSize: '.9rem' }}>👤 {user}</span>
           <button onClick={logout} style={styles.logoutBtn}>Log out</button>
         </div>
       </div>
@@ -123,17 +144,17 @@ export default function App() {
 }
 
 const styles = {
-  card:      { background:'#ffffff', borderRadius:16, padding:'2rem', boxShadow:'0 4px 24px rgba(0,0,0,0.08)' },
-  heading:   { fontSize:'1.75rem', fontWeight:700, color:'#1e293b', marginBottom:4 },
-  sub:       { color:'#64748b', fontSize:'0.875rem', marginBottom:'1.5rem' },
-  form:      { display:'flex', gap:8, marginBottom:'1.5rem' },
-  input:     { flex:1, padding:'0.6rem 1rem', borderRadius:8, border:'1.5px solid #e2e8f0', fontSize:'1rem', outline:'none' },
-  btn:       { padding:'0.6rem 1.25rem', background:'#6366f1', color:'#fff', border:'none', borderRadius:8, fontSize:'1rem', cursor:'pointer', fontWeight:600 },
-  logoutBtn: { padding:'.35rem .85rem', borderRadius:8, border:'1px solid #e2e8f0', background:'#fff', cursor:'pointer', fontSize:'.85rem', color:'#64748b' },
-  error:     { color:'#ef4444', background:'#fef2f2', padding:'0.75rem 1rem', borderRadius:8, marginBottom:'1rem' },
-  hint:      { color:'#94a3b8', textAlign:'center', padding:'2rem 0' },
-  list:      { listStyle:'none', display:'flex', flexDirection:'column', gap:8 },
-  item:      { display:'flex', alignItems:'center', gap:12, padding:'0.75rem 1rem', background:'#f8fafc', borderRadius:10, border:'1px solid #e2e8f0' },
-  title:     { flex:1, fontSize:'0.95rem' },
-  del:       { background:'none', border:'none', color:'#94a3b8', cursor:'pointer', fontSize:'0.9rem', padding:'2px 6px', borderRadius:4 },
+  card: { background: '#ffffff', borderRadius: 16, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' },
+  heading: { fontSize: '1.75rem', fontWeight: 700, color: '#1e293b', marginBottom: 4 },
+  sub: { color: '#64748b', fontSize: '0.875rem', marginBottom: '1.5rem' },
+  form: { display: 'flex', gap: 8, marginBottom: '1.5rem' },
+  input: { flex: 1, padding: '0.6rem 1rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '1rem', outline: 'none' },
+  btn: { padding: '0.6rem 1.25rem', background: '#6366f1', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', cursor: 'pointer', fontWeight: 600 },
+  logoutBtn: { padding: '.35rem .85rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '.85rem', color: '#64748b' },
+  error: { color: '#ef4444', background: '#fef2f2', padding: '0.75rem 1rem', borderRadius: 8, marginBottom: '1rem' },
+  hint: { color: '#94a3b8', textAlign: 'center', padding: '2rem 0' },
+  list: { listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 8 },
+  item: { display: 'flex', alignItems: 'center', gap: 12, padding: '0.75rem 1rem', background: '#f8fafc', borderRadius: 10, border: '1px solid #e2e8f0' },
+  title: { flex: 1, fontSize: '0.95rem' },
+  del: { background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: '0.9rem', padding: '2px 6px', borderRadius: 4 },
 }

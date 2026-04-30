@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import { api } from '../api';
 
-export default function Login({ onLogin }) {
+export default function Login({ onLogin, onGoToRegister, successMessage }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError]       = useState('');
-  const [loading, setLoading]   = useState(false);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -13,7 +13,7 @@ export default function Login({ onLogin }) {
     setLoading(true);
 
     try {
-      const res  = await api.login(username, password);
+      const res = await api.login(username, password);
       const data = await res.json();
 
       if (!res.ok) {
@@ -36,6 +36,8 @@ export default function Login({ onLogin }) {
       <div style={styles.card}>
         <h2 style={styles.title}>Task Manager</h2>
         <p style={styles.subtitle}>Sign in to continue</p>
+
+        {successMessage && <p style={styles.success}>{successMessage}</p>}
 
         <form onSubmit={handleSubmit} style={styles.form}>
           <input
@@ -61,18 +63,27 @@ export default function Login({ onLogin }) {
             {loading ? 'Signing in…' : 'Sign In'}
           </button>
         </form>
+
+        <p style={styles.link}>
+          Don't have an account?{' '}
+          <span onClick={onGoToRegister} style={styles.anchor}>Register</span>
+        </p>
+
       </div>
     </div>
   );
 }
 
 const styles = {
-  wrapper:  { display:'flex', justifyContent:'center', alignItems:'center', height:'100vh', background:'#f0f2f5' },
-  card:     { background:'#fff', padding:'2.5rem', borderRadius:'12px', boxShadow:'0 4px 20px rgba(0,0,0,0.1)', width:'100%', maxWidth:'360px' },
-  title:    { margin:'0 0 .25rem', fontSize:'1.6rem', fontWeight:700, textAlign:'center' },
-  subtitle: { margin:'0 0 1.5rem', color:'#888', textAlign:'center', fontSize:'.9rem' },
-  form:     { display:'flex', flexDirection:'column', gap:'1rem' },
-  input:    { padding:'.75rem 1rem', borderRadius:'8px', border:'1px solid #ddd', fontSize:'1rem', outline:'none' },
-  button:   { padding:'.75rem', borderRadius:'8px', background:'#4f46e5', color:'#fff', border:'none', fontSize:'1rem', fontWeight:600, cursor:'pointer' },
-  error:    { color:'#e53e3e', fontSize:'.875rem', margin:0 },
+  wrapper: { display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh', background: '#f0f2f5' },
+  card: { background: '#fff', padding: '2.5rem', borderRadius: '12px', boxShadow: '0 4px 20px rgba(0,0,0,0.1)', width: '100%', maxWidth: '360px' },
+  title: { margin: '0 0 .25rem', fontSize: '1.6rem', fontWeight: 700, textAlign: 'center' },
+  subtitle: { margin: '0 0 1.5rem', color: '#888', textAlign: 'center', fontSize: '.9rem' },
+  form: { display: 'flex', flexDirection: 'column', gap: '1rem' },
+  input: { padding: '.75rem 1rem', borderRadius: '8px', border: '1px solid #ddd', fontSize: '1rem', outline: 'none' },
+  button: { padding: '.75rem', borderRadius: '8px', background: '#4f46e5', color: '#fff', border: 'none', fontSize: '1rem', fontWeight: 600, cursor: 'pointer' },
+  success: { color: '#16a34a', fontSize: '.875rem', textAlign: 'center', marginBottom: '1rem' },
+  error: { color: '#e53e3e', fontSize: '.875rem', margin: 0 },
+  link: { textAlign: 'center', marginTop: '1.25rem', fontSize: '.875rem', color: '#888' },
+  anchor: { color: '#4f46e5', cursor: 'pointer', fontWeight: 600 },
 };
