@@ -46,13 +46,15 @@ export default function TaskManager({ user, onBack, onLogout }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                    <h1 style={styles.heading}>📋 Task Manager</h1>
+                    {/* <h1 style={styles.heading}>📋 Task Manager</h1> */}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ color: '#64748b', fontSize: '.9rem' }}>👤 {user}</span>
+                    <span style={{ color: '#64748b', fontSize: '1rem', fontWeight: 'bold' }}>👤 {user}</span>
                     <button onClick={onLogout} style={styles.logoutBtn}>Log out</button>
                 </div>
             </div>
+
+            <h1 style={styles.heading}>📋 Task Manager</h1>
 
             <p style={styles.sub}>{pending} pending · {done} done</p>
 
@@ -83,7 +85,7 @@ export default function TaskManager({ user, onBack, onLogout }) {
 
 const styles = {
     card: { background: '#ffffff', borderRadius: 16, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)' },
-    heading: { fontSize: '1.75rem', fontWeight: 700, color: '#1e293b', marginBottom: 4 },
+    heading: { fontSize: '1.75rem', fontWeight: 700, color: '#1e293b', marginBottom: 20, marginTop: 24 },
     sub: { color: '#64748b', fontSize: '0.875rem', marginBottom: '1.5rem' },
     form: { display: 'flex', gap: 8, marginBottom: '1.5rem' },
     input: { flex: 1, padding: '0.6rem 1rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '1rem', outline: 'none' },

@@ -67,17 +67,23 @@ export default function OIGScreener({ user, onBack, onLogout }) {
         <div style={styles.card}>
             {/* Header — identical to original */}
             <div style={styles.header}>
+                <button onClick={onBack} style={styles.backBtn}>← Back</button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                    <div>
+                    {/* <button onClick={onBack} style={styles.backBtn}>← Back</button> */}
+                    {/* <div>
                         <h1 style={styles.heading}>🔍 OIG Exclusion Screener</h1>
                         <p style={styles.sub}>Search the federal LEIE database for excluded individuals</p>
-                    </div>
+                    </div> */}
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ color: '#64748b', fontSize: '.9rem' }}>👤 {user}</span>
+                    <span style={{ color: '#64748b', fontSize: '1rem', fontWeight: 'bold' }}>👤 {user}</span>
                     <button onClick={onLogout} style={styles.logoutBtn}>Log out</button>
                 </div>
+            </div>
+
+            <div style={{ paddingBottom: '20px' }}>
+                <h1 style={styles.heading}>🔍 OIG Exclusion Screener</h1>
+                <p style={styles.sub}>Search the federal LEIE database for excluded individuals</p>
             </div>
 
             {/* Search form — identical to original */}
