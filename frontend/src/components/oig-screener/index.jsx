@@ -2,8 +2,10 @@ import { useState } from 'react'
 import { api } from '../../api'
 
 export default function OIGScreener({ user, onBack, onLogout }) {
-    const [form, setForm] = useState({ firstName: '', lastName: '', busName: '', npi: '' })
+    const [form, setForm] = useState({ firstName: '', lastName: '', npi: '', busName: '' })
     const [results, setResults] = useState(null)
+    const [selected, setSelected] = useState(null)
+    const [showModal, setShowModal] = useState(false)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
 
@@ -18,17 +20,36 @@ export default function OIGScreener({ user, onBack, onLogout }) {
         setError('')
         setLoading(true)
         setResults(null)
+        setSelected(null)
+
         try {
             const res = await api.searchOIG(form)
             const data = await res.json()
             setResults(data)
-        } catch { setError('Could not connect to screening service.') }
-        finally { setLoading(false) }
+
+            // If multiple results, show modal to pick
+            if (data.length > 1) {
+                setShowModal(true)
+            } else if (data.length === 1) {
+                setSelected(data[0])
+            }
+        } catch {
+            setError('Could not connect to screening service.')
+        } finally {
+            setLoading(false)
+        }
+    }
+
+    function handleSelect(record) {
+        setSelected(record)
+        setShowModal(false)
     }
 
     function handleReset() {
-        setForm({ firstName: '', lastName: '', busName: '', npi: '' })
+        setForm({ firstName: '', lastName: '', npi: '', busName: '' })
         setResults(null)
+        setSelected(null)
+        setShowModal(false)
         setError('')
     }
 
@@ -81,12 +102,21 @@ export default function OIGScreener({ user, onBack, onLogout }) {
                 </form>
             </div>
 
-            {/* Results */}
+            {/* Result Display */}
             {results !== null && (
                 <div style={styles.resultsCard}>
-                    <h2 style={styles.sectionTitle}>
-                        Results <span style={{ fontWeight: 400, color: '#64748b' }}>{results.length} found</span>
-                    </h2>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
+                        <h2 style={styles.sectionTitle}>
+                            Result {results.length > 1 && (
+                                <span style={{ fontWeight: 400, color: '#64748b' }}>
+                                    — {results.length} matches found.{' '}
+                                    <button onClick={() => setShowModal(true)} style={styles.switchBtn}>
+                                        Switch individual
+                                    </button>
+                                </span>
+                            )}
+                        </h2>
+                    </div>
 
                     {results.length === 0 ? (
                         <div style={styles.clearBox}>
@@ -95,24 +125,64 @@ export default function OIGScreener({ user, onBack, onLogout }) {
                                 This individual does not appear on the OIG LEIE exclusion list. Document this result for your compliance records.
                             </p>
                         </div>
-                    ) : (
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                            {results.map((r, i) => (
-                                <div key={i} style={styles.resultItem}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                        <div>
-                                            <p style={styles.name}>{r.lastname}, {r.firstname} {r.midname}</p>
-                                            <p style={styles.meta}>Exclusion Type: <b>{r.excltype}</b> · Date: {r.excldate}</p>
-                                            {r.npi && <p style={styles.meta}>NPI: {r.npi}</p>}
-                                            {r.specialty && <p style={styles.meta}>Specialty: {r.specialty}</p>}
-                                            {r.reindate && <p style={{ ...styles.meta, color: '#f59e0b' }}>Reinstatement Date: {r.reindate}</p>}
-                                        </div>
-                                        <span style={styles.excludedBadge}>⛔ EXCLUDED</span>
-                                    </div>
+                    ) : selected ? (
+                        <div style={styles.resultItem}>
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                                <div>
+                                    <p style={styles.name}>{selected.lastname}, {selected.firstname} {selected.midname}</p>
+                                    <p style={styles.meta}>Exclusion Type: <b>{selected.excltype}</b> · Date: {selected.excldate}</p>
+                                    {selected.npi && <p style={styles.meta}>NPI: {selected.npi}</p>}
+                                    {selected.specialty && <p style={styles.meta}>Specialty: {selected.specialty}</p>}
+                                    {selected.busname && <p style={styles.meta}>Practice Type: {selected.busname}</p>}
+                                    {selected.state && <p style={styles.meta}>State: {selected.state}</p>}
+                                    {selected.reindate && selected.reindate !== '00000000' ? (
+                                        <p style={{ ...styles.meta, color: '#16a34a', fontWeight: 600 }}>✅ Reinstated: {selected.reindate}</p>
+                                    ) : (
+                                        <p style={{ ...styles.meta, color: '#ef4444', fontWeight: 600 }}>⛔ Still excluded — no reinstatement</p>
+                                    )}
                                 </div>
+                                <span style={styles.excludedBadge}>⛔ EXCLUDED</span>
+                            </div>
+                        </div>
+                    ) : null}
+                </div>
+            )}
+
+            {/* Modal */}
+            {showModal && (
+                <div style={styles.modalOverlay}>
+                    <div style={styles.modalBox}>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>
+                                {results.length} matches found — select the correct individual
+                            </h2>
+                            <button onClick={() => setShowModal(false)} style={styles.closeBtn}>✕</button>
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
+                            {results.map((r, i) => (
+                                <button key={i} onClick={() => handleSelect(r)} style={styles.modalItem}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                        <div style={{ textAlign: 'left' }}>
+                                            <p style={{ margin: 0, fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>
+                                                {r.lastname}, {r.firstname} {r.midname}
+                                            </p>
+                                            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
+                                                {r.specialty && `${r.specialty} · `}
+                                                {r.state && `${r.state} · `}
+                                                Excluded: {r.excldate}
+                                            </p>
+                                            {r.busname && (
+                                                <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>{r.busname}</p>
+                                            )}
+                                        </div>
+                                        <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700, whiteSpace: 'nowrap', marginLeft: 12 }}>
+                                            ⛔ EXCLUDED
+                                        </span>
+                                    </div>
+                                </button>
                             ))}
                         </div>
-                    )}
+                    </div>
                 </div>
             )}
         </div>
@@ -135,10 +205,15 @@ const styles = {
     error: { color: '#ef4444', background: '#fef2f2', padding: '0.5rem 1rem', borderRadius: 8, marginTop: 8 },
     searchBtn: { padding: '0.6rem 1.5rem', background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', cursor: 'pointer', fontWeight: 600 },
     resetBtn: { padding: '0.6rem 1rem', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: '0.95rem', cursor: 'pointer' },
+    switchBtn: { background: 'none', border: 'none', color: '#0ea5e9', cursor: 'pointer', fontSize: '0.875rem', padding: 0, textDecoration: 'underline' },
     resultsCard: { background: '#f8fafc', borderRadius: 12, padding: '1.5rem', border: '1px solid #e2e8f0' },
     clearBox: { background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '1rem 1.25rem' },
     resultItem: { background: '#fff', border: '1.5px solid #fecaca', borderRadius: 10, padding: '1rem 1.25rem' },
     excludedBadge: { padding: '0.35rem 0.75rem', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', background: '#fef2f2', whiteSpace: 'nowrap' },
     name: { fontWeight: 700, color: '#1e293b', margin: '0 0 4px 0', fontSize: '1rem' },
     meta: { color: '#64748b', fontSize: '0.82rem', margin: '2px 0 0 0' },
+    modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+    modalBox: { background: '#fff', borderRadius: 16, padding: '1.5rem', width: '100%', maxWidth: 560, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' },
+    modalItem: { width: '100%', padding: '0.85rem 1rem', background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 10, cursor: 'pointer', transition: 'border-color 0.15s' },
+    closeBtn: { background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: '#94a3b8', padding: '2px 6px' },
 }
