@@ -34,7 +34,7 @@ export default function Login({ onLogin, onGoToRegister, successMessage }) {
   return (
     <div style={styles.wrapper}>
       <div style={styles.card}>
-        <h2 style={styles.title}>Task Manager</h2>
+        <h2 style={styles.title}>AIO System</h2>
         <p style={styles.subtitle}>Sign in to continue</p>
 
         {successMessage && <p style={styles.success}>{successMessage}</p>}

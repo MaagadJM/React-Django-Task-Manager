@@ -42,4 +42,10 @@ export const api = {
   createTask: (data)       => request('/tasks/',       { method: 'POST',   body: JSON.stringify(data) }),
   updateTask: (id, data)   => request(`/tasks/${id}/`, { method: 'PATCH',  body: JSON.stringify(data) }),
   deleteTask: (id)         => request(`/tasks/${id}/`, { method: 'DELETE' }),
+
+  searchOIG: ({ firstName, lastName, busName, npi }) =>
+    fetch(`${BASE_URL}/oig/search/?firstName=${firstName}&lastName=${lastName}&busName=${busName}&npi=${npi}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
+    }),
+  
 };
