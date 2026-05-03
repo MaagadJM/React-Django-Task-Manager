@@ -14,7 +14,6 @@ class WhitelistTokenObtainView(APIView):
         username = request.data.get('username', '').strip()
         password = request.data.get('password', '').strip()
 
-        # Give a clear message if the account exists but is pending
         try:
             user_obj = User.objects.get(username=username)
             if not user_obj.is_active:
@@ -71,7 +70,6 @@ class RegisterView(APIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        # Create user as inactive — requires admin approval
         User.objects.create_user(username=username, password=password, is_active=False)
 
         return Response(

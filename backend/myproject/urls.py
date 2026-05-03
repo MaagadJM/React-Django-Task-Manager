@@ -9,4 +9,5 @@ urlpatterns = [
     path('api/auth/refresh/', TokenRefreshView.as_view(),         name='token_refresh'),
     path('api/auth/register/', RegisterView.as_view(),            name='register'),
     path('api/', include('tasks.urls')),
+    path('api/oig/', include('oig.urls')),
 ]
