@@ -1,38 +1,33 @@
 import { useState } from 'react'
 import { api } from '../../api'
 
+const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
+
 export default function OIGScreener({ user, onBack, onLogout }) {
     const [form, setForm] = useState({ firstName: '', lastName: '', npi: '', busName: '' })
-    const [results, setResults] = useState(null)
-    const [selected, setSelected] = useState(null)
-    const [showModal, setShowModal] = useState(false)
+    const [results, setResults] = useState([])
+    const [meta, setMeta] = useState({ total_count: 0, total_pages: 1, page: 1, page_size: 20 })
+    const [pageSize, setPageSize] = useState(20)
+    const [currentPage, setCurrentPage] = useState(1)
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
+    const [searched, setSearched] = useState(false)
 
     function handleChange(e) {
         setForm({ ...form, [e.target.name]: e.target.value })
     }
 
-    async function handleSearch(e) {
-        e.preventDefault()
-        if (!form.lastName.trim() && !form.busName.trim())
-            return setError('Last name or business name is required.')
-        setError('')
+    async function fetchPage(page, size) {
         setLoading(true)
-        setResults(null)
-        setSelected(null)
-
+        setError('')
         try {
-            const res = await api.searchOIG(form)
+            const res = await api.searchOIG({ ...form, page, pageSize: size })
             const data = await res.json()
-            setResults(data)
-
-            // If multiple results, show modal to pick
-            if (data.length > 1) {
-                setShowModal(true)
-            } else if (data.length === 1) {
-                setSelected(data[0])
-            }
+            if (data.error) { setError(data.error); return }
+            setResults(data.results)
+            setMeta(data)
+            setCurrentPage(data.page)
+            setSearched(true)
         } catch {
             setError('Could not connect to screening service.')
         } finally {
@@ -40,22 +35,37 @@ export default function OIGScreener({ user, onBack, onLogout }) {
         }
     }
 
-    function handleSelect(record) {
-        setSelected(record)
-        setShowModal(false)
+    async function handleSearch(e) {
+        e.preventDefault()
+        setCurrentPage(1)
+        await fetchPage(1, pageSize)
+    }
+
+    function handlePageSizeChange(e) {
+        const newSize = Number(e.target.value)
+        setPageSize(newSize)
+        fetchPage(1, newSize)
+    }
+
+    function handlePageChange(page) {
+        fetchPage(page, pageSize)
+        window.scrollTo({ top: 0, behavior: 'smooth' })
     }
 
     function handleReset() {
         setForm({ firstName: '', lastName: '', npi: '', busName: '' })
-        setResults(null)
-        setSelected(null)
-        setShowModal(false)
+        setResults([])
+        setMeta({ total_count: 0, total_pages: 1, page: 1, page_size: 20 })
+        setSearched(false)
         setError('')
     }
 
+    const start = (meta.page - 1) * meta.page_size + 1
+    const end = Math.min(meta.page * meta.page_size, meta.total_count)
+
     return (
         <div style={styles.card}>
-            {/* Header */}
+            {/* Header — identical to original */}
             <div style={styles.header}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
                     <button onClick={onBack} style={styles.backBtn}>← Back</button>
@@ -70,7 +80,7 @@ export default function OIGScreener({ user, onBack, onLogout }) {
                 </div>
             </div>
 
-            {/* Search Form */}
+            {/* Search form — identical to original */}
             <div style={styles.formCard}>
                 <h2 style={styles.sectionTitle}>Search Individual</h2>
                 <form onSubmit={handleSearch}>
@@ -97,96 +107,101 @@ export default function OIGScreener({ user, onBack, onLogout }) {
                         <button type="submit" style={styles.searchBtn} disabled={loading}>
                             {loading ? 'Searching…' : '🔍 Search'}
                         </button>
-                        {results !== null && <button type="button" onClick={handleReset} style={styles.resetBtn}>Reset</button>}
+                        {searched && <button type="button" onClick={handleReset} style={styles.resetBtn}>Reset</button>}
                     </div>
                 </form>
             </div>
 
-            {/* Result Display */}
-            {results !== null && (
+            {/* Results */}
+            {searched && (
                 <div style={styles.resultsCard}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                        <h2 style={styles.sectionTitle}>
-                            Result {results.length > 1 && (
-                                <span style={{ fontWeight: 400, color: '#64748b' }}>
-                                    — {results.length} matches found.{' '}
-                                    <button onClick={() => setShowModal(true)} style={styles.switchBtn}>
-                                        Switch individual
-                                    </button>
-                                </span>
-                            )}
-                        </h2>
-                    </div>
-
-                    {results.length === 0 ? (
+                    {meta.total_count === 0 ? (
                         <div style={styles.clearBox}>
                             <p style={{ color: '#15803d', fontWeight: 600, margin: 0 }}>✅ No exclusions found.</p>
                             <p style={{ color: '#64748b', fontSize: '0.85rem', marginTop: 4 }}>
                                 This individual does not appear on the OIG LEIE exclusion list. Document this result for your compliance records.
                             </p>
                         </div>
-                    ) : selected ? (
-                        <div style={styles.resultItem}>
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                                <div>
-                                    <p style={styles.name}>{selected.lastname}, {selected.firstname} {selected.midname}</p>
-                                    <p style={styles.meta}>Exclusion Type: <b>{selected.excltype}</b> · Date: {selected.excldate}</p>
-                                    {selected.npi && <p style={styles.meta}>NPI: {selected.npi}</p>}
-                                    {selected.specialty && <p style={styles.meta}>Specialty: {selected.specialty}</p>}
-                                    {selected.busname && <p style={styles.meta}>Practice Type: {selected.busname}</p>}
-                                    {selected.state && <p style={styles.meta}>State: {selected.state}</p>}
-                                    {selected.reindate && selected.reindate !== '00000000' ? (
-                                        <p style={{ ...styles.meta, color: '#16a34a', fontWeight: 600 }}>✅ Reinstated: {selected.reindate}</p>
-                                    ) : (
-                                        <p style={{ ...styles.meta, color: '#ef4444', fontWeight: 600 }}>⛔ Still excluded — no reinstatement</p>
-                                    )}
+                    ) : (
+                        <>
+                            {/* Toolbar */}
+                            <div style={styles.toolbar}>
+                                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+                                    Showing <b>{start}–{end}</b> of <b>{meta.total_count}</b> result{meta.total_count !== 1 ? 's' : ''}
+                                </p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b' }}>
+                                    Rows per page:
+                                    <select style={styles.select} value={pageSize} onChange={handlePageSizeChange}>
+                                        {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
+                                    </select>
                                 </div>
-                                <span style={styles.excludedBadge}>⛔ EXCLUDED</span>
                             </div>
-                        </div>
-                    ) : null}
-                </div>
-            )}
 
-            {/* Modal */}
-            {showModal && (
-                <div style={styles.modalOverlay}>
-                    <div style={styles.modalBox}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-                            <h2 style={{ margin: 0, fontSize: '1rem', fontWeight: 700, color: '#1e293b' }}>
-                                {results.length} matches found — select the correct individual
-                            </h2>
-                            <button onClick={() => setShowModal(false)} style={styles.closeBtn}>✕</button>
-                        </div>
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 8, maxHeight: 400, overflowY: 'auto' }}>
-                            {results.map((r, i) => (
-                                <button key={i} onClick={() => handleSelect(r)} style={styles.modalItem}>
-                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                        <div style={{ textAlign: 'left' }}>
-                                            <p style={{ margin: 0, fontWeight: 700, color: '#1e293b', fontSize: '0.95rem' }}>
-                                                {r.lastname}, {r.firstname} {r.midname}
-                                            </p>
-                                            <p style={{ margin: '2px 0 0', fontSize: '0.8rem', color: '#64748b' }}>
-                                                {r.specialty && `${r.specialty} · `}
-                                                {r.state && `${r.state} · `}
-                                                Excluded: {r.excldate}
-                                            </p>
-                                            {r.busname && (
-                                                <p style={{ margin: '2px 0 0', fontSize: '0.78rem', color: '#94a3b8' }}>{r.busname}</p>
-                                            )}
-                                        </div>
-                                        <span style={{ fontSize: '0.75rem', color: '#ef4444', fontWeight: 700, whiteSpace: 'nowrap', marginLeft: 12 }}>
-                                            ⛔ EXCLUDED
-                                        </span>
-                                    </div>
-                                </button>
-                            ))}
-                        </div>
-                    </div>
+                            {/* Table */}
+                            <div style={{ overflowX: 'auto' }}>
+                                <table style={styles.table}>
+                                    <thead>
+                                        <tr>
+                                            {['Name', 'Business / Practice', 'Specialty', 'NPI', 'State', 'Excl. Date', 'Status'].map(h => (
+                                                <th key={h} style={styles.th}>{h}</th>
+                                            ))}
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {results.map((r, i) => (
+                                            <tr key={i}>
+                                                <td style={{ ...styles.td, fontWeight: 600 }}>{r.lastname}{r.firstname ? `, ${r.firstname}` : ''} {r.midname}</td>
+                                                <td style={{ ...styles.td, color: '#64748b' }}>{r.busname || '—'}</td>
+                                                <td style={styles.td}>{r.specialty || '—'}</td>
+                                                <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 12 }}>{r.npi || '—'}</td>
+                                                <td style={styles.td}>{r.state || '—'}</td>
+                                                <td style={styles.td}>{r.excldate || '—'}</td>
+                                                <td style={styles.td}>
+                                                    {r.reindate && r.reindate !== '00000000'
+                                                        ? <span style={styles.badgeGreen}>✅ Reinstated</span>
+                                                        : <span style={styles.excludedBadge}>⛔ Excluded</span>}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Pagination */}
+                            {meta.total_pages > 1 && (
+                                <div style={styles.pagination}>
+                                    <button style={styles.pgBtn} disabled={currentPage === 1}
+                                        onClick={() => handlePageChange(currentPage - 1)}>← Prev</button>
+
+                                    {getPaginationRange(currentPage, meta.total_pages).map((p, i) =>
+                                        p === '…'
+                                            ? <span key={i} style={{ padding: '0 4px', color: '#94a3b8', fontSize: 13 }}>…</span>
+                                            : <button key={i}
+                                                style={{ ...styles.pgBtn, ...(p === currentPage ? styles.pgBtnActive : {}) }}
+                                                onClick={() => handlePageChange(p)}>{p}</button>
+                                    )}
+
+                                    <button style={styles.pgBtn} disabled={currentPage === meta.total_pages}
+                                        onClick={() => handlePageChange(currentPage + 1)}>Next →</button>
+
+                                    <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>
+                                        Page {currentPage} of {meta.total_pages}
+                                    </span>
+                                </div>
+                            )}
+                        </>
+                    )}
                 </div>
             )}
         </div>
     )
+}
+
+function getPaginationRange(current, total) {
+    if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1)
+    if (current <= 4) return [1, 2, 3, 4, 5, '…', total]
+    if (current >= total - 3) return [1, '…', total - 4, total - 3, total - 2, total - 1, total]
+    return [1, '…', current - 1, current, current + 1, '…', total]
 }
 
 const styles = {
@@ -205,15 +220,16 @@ const styles = {
     error: { color: '#ef4444', background: '#fef2f2', padding: '0.5rem 1rem', borderRadius: 8, marginTop: 8 },
     searchBtn: { padding: '0.6rem 1.5rem', background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', cursor: 'pointer', fontWeight: 600 },
     resetBtn: { padding: '0.6rem 1rem', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: '0.95rem', cursor: 'pointer' },
-    switchBtn: { background: 'none', border: 'none', color: '#0ea5e9', cursor: 'pointer', fontSize: '0.875rem', padding: 0, textDecoration: 'underline' },
     resultsCard: { background: '#f8fafc', borderRadius: 12, padding: '1.5rem', border: '1px solid #e2e8f0' },
     clearBox: { background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '1rem 1.25rem' },
-    resultItem: { background: '#fff', border: '1.5px solid #fecaca', borderRadius: 10, padding: '1rem 1.25rem' },
-    excludedBadge: { padding: '0.35rem 0.75rem', borderRadius: 20, fontSize: '0.8rem', fontWeight: 700, color: '#ef4444', background: '#fef2f2', whiteSpace: 'nowrap' },
-    name: { fontWeight: 700, color: '#1e293b', margin: '0 0 4px 0', fontSize: '1rem' },
-    meta: { color: '#64748b', fontSize: '0.82rem', margin: '2px 0 0 0' },
-    modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
-    modalBox: { background: '#fff', borderRadius: 16, padding: '1.5rem', width: '100%', maxWidth: 560, boxShadow: '0 8px 40px rgba(0,0,0,0.18)' },
-    modalItem: { width: '100%', padding: '0.85rem 1rem', background: '#f8fafc', border: '1.5px solid #e2e8f0', borderRadius: 10, cursor: 'pointer', transition: 'border-color 0.15s' },
-    closeBtn: { background: 'none', border: 'none', fontSize: '1rem', cursor: 'pointer', color: '#94a3b8', padding: '2px 6px' },
+    toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 },
+    select: { padding: '4px 8px', borderRadius: 6, border: '1px solid #e2e8f0', fontSize: 13, color: '#1e293b', background: '#fff' },
+    table: { width: '100%', borderCollapse: 'collapse', fontSize: 13 },
+    th: { textAlign: 'left', fontSize: 11, fontWeight: 600, color: '#64748b', padding: '6px 10px', borderBottom: '1px solid #e2e8f0', whiteSpace: 'nowrap', textTransform: 'uppercase', letterSpacing: '0.04em' },
+    td: { padding: '9px 10px', borderBottom: '1px solid #f1f5f9', color: '#1e293b', verticalAlign: 'middle' },
+    excludedBadge: { padding: '0.25rem 0.65rem', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, color: '#ef4444', background: '#fef2f2', whiteSpace: 'nowrap' },
+    badgeGreen: { padding: '0.25rem 0.65rem', borderRadius: 20, fontSize: '0.75rem', fontWeight: 700, color: '#15803d', background: '#f0fdf4', whiteSpace: 'nowrap' },
+    pagination: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 16, flexWrap: 'wrap' },
+    pgBtn: { minWidth: 32, height: 28, padding: '0 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#475569' },
+    pgBtnActive: { background: '#0ea5e9', color: '#fff', borderColor: '#0ea5e9', fontWeight: 600 },
 }
