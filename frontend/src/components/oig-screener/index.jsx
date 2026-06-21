@@ -1,5 +1,7 @@
 import { useState } from 'react'
 import { api } from '../../api'
+import { useTheme } from '../../ThemeContext'
+import { getTheme } from '../../theme'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 
@@ -12,6 +14,8 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [searched, setSearched] = useState(false)
+    const { dark, toggleDark } = useTheme()
+    const t = getTheme(dark)
 
     function handleChange(e) {
         setForm({ ...form, [e.target.name]: e.target.value })
@@ -63,49 +67,44 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
     const start = (meta.page - 1) * meta.page_size + 1
     const end = Math.min(meta.page * meta.page_size, meta.total_count)
 
+    const inputStyle = { ...styles.input, background: t.inputBg, border: `1.5px solid ${t.inputBorder}`, color: t.text }
+    const btnStyle = { ...styles.backBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}` }
+
     return (
-        <div style={styles.card}>
-            {/* Header — identical to original */}
+        <div style={{ ...styles.card, background: t.card }}>
             <div style={styles.header}>
-                <button onClick={onBack} style={styles.backBtn}>← Back</button>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                    {/* <button onClick={onBack} style={styles.backBtn}>← Back</button> */}
-                    {/* <div>
-                        <h1 style={styles.heading}>🔍 OIG Exclusion Screener</h1>
-                        <p style={styles.sub}>Search the federal LEIE database for excluded individuals</p>
-                    </div> */}
-                </div>
+                <button onClick={onBack} style={btnStyle}>← Back</button>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-                    <span style={{ color: '#64748b', fontSize: '1rem', fontWeight: 'bold' }}>👤 {user}</span>
-                    <button onClick={onLogout} style={styles.logoutBtn}>{isGuest ? 'Sign In' : 'Log out'}</button>
+                    <span style={{ color: t.textSub, fontSize: '1rem', fontWeight: 'bold' }}>👤 {user}</span>
+                    <button onClick={toggleDark} title="Toggle dark mode" style={{ ...btnStyle, padding: '.35rem .5rem', fontSize: '.9rem' }}>{dark ? '☀️' : '🌙'}</button>
+                    <button onClick={onLogout} style={btnStyle}>{isGuest ? 'Sign In' : 'Log out'}</button>
                 </div>
             </div>
 
             <div style={{ paddingBottom: '20px' }}>
-                <h1 style={styles.heading}>🔍 OIG Exclusion Screener</h1>
-                <p style={styles.sub}>Search the federal LEIE database for excluded individuals</p>
+                <h1 style={{ ...styles.heading, color: t.text }}>🔍 OIG Exclusion Screener</h1>
+                <p style={{ ...styles.sub, color: t.textSub }}>Search the federal LEIE database for excluded individuals</p>
             </div>
 
-            {/* Search form — identical to original */}
-            <div style={styles.formCard}>
-                <h2 style={styles.sectionTitle}>Search Individual</h2>
+            <div style={{ ...styles.formCard, background: t.cardAlt, border: `1px solid ${t.border}` }}>
+                <h2 style={{ ...styles.sectionTitle, color: t.text }}>Search Individual</h2>
                 <form onSubmit={handleSearch}>
                     <div style={styles.fieldRow}>
                         <div style={styles.field}>
-                            <label style={styles.label}>First Name</label>
-                            <input style={styles.input} name="firstName" value={form.firstName} onChange={handleChange} placeholder="e.g. John" />
+                            <label style={{ ...styles.label, color: t.textSub }}>First Name</label>
+                            <input style={inputStyle} name="firstName" value={form.firstName} onChange={handleChange} placeholder="e.g. John" />
                         </div>
                         <div style={styles.field}>
-                            <label style={styles.label}>Last Name *</label>
-                            <input style={styles.input} name="lastName" value={form.lastName} onChange={handleChange} placeholder="e.g. Smith" />
+                            <label style={{ ...styles.label, color: t.textSub }}>Last Name *</label>
+                            <input style={inputStyle} name="lastName" value={form.lastName} onChange={handleChange} placeholder="e.g. Smith" />
                         </div>
                         <div style={styles.field}>
-                            <label style={styles.label}>Business Name (optional)</label>
-                            <input style={styles.input} name="busName" value={form.busName} onChange={handleChange} placeholder="e.g. Acme Health LLC" />
+                            <label style={{ ...styles.label, color: t.textSub }}>Business Name (optional)</label>
+                            <input style={inputStyle} name="busName" value={form.busName} onChange={handleChange} placeholder="e.g. Acme Health LLC" />
                         </div>
                         <div style={styles.field}>
-                            <label style={styles.label}>NPI (optional)</label>
-                            <input style={styles.input} name="npi" value={form.npi} onChange={handleChange} placeholder="e.g. 1234567890" />
+                            <label style={{ ...styles.label, color: t.textSub }}>NPI (optional)</label>
+                            <input style={inputStyle} name="npi" value={form.npi} onChange={handleChange} placeholder="e.g. 1234567890" />
                         </div>
                     </div>
                     {error && <p style={styles.error}>{error}</p>}
@@ -113,14 +112,13 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
                         <button type="submit" style={styles.searchBtn} disabled={loading}>
                             {loading ? 'Searching…' : '🔍 Search'}
                         </button>
-                        {searched && <button type="button" onClick={handleReset} style={styles.resetBtn}>Reset</button>}
+                        {searched && <button type="button" onClick={handleReset} style={btnStyle}>Reset</button>}
                     </div>
                 </form>
             </div>
 
-            {/* Results */}
             {searched && (
-                <div style={styles.resultsCard}>
+                <div style={{ ...styles.resultsCard, background: t.cardAlt, border: `1px solid ${t.border}` }}>
                     {meta.total_count === 0 ? (
                         <div style={styles.clearBox}>
                             <p style={{ color: '#15803d', fontWeight: 600, margin: 0 }}>✅ No exclusions found.</p>
@@ -130,39 +128,37 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
                         </div>
                     ) : (
                         <>
-                            {/* Toolbar */}
                             <div style={styles.toolbar}>
-                                <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>
+                                <p style={{ fontSize: 13, color: t.textSub, margin: 0 }}>
                                     Showing <b>{start}–{end}</b> of <b>{meta.total_count}</b> result{meta.total_count !== 1 ? 's' : ''}
                                 </p>
-                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: '#64748b' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 13, color: t.textSub }}>
                                     Rows per page:
-                                    <select style={styles.select} value={pageSize} onChange={handlePageSizeChange}>
+                                    <select style={{ ...styles.select, background: t.inputBg, color: t.text, border: `1px solid ${t.border}` }} value={pageSize} onChange={handlePageSizeChange}>
                                         {PAGE_SIZE_OPTIONS.map(n => <option key={n} value={n}>{n}</option>)}
                                     </select>
                                 </div>
                             </div>
 
-                            {/* Table */}
                             <div style={{ overflowX: 'auto' }}>
                                 <table style={styles.table}>
                                     <thead>
                                         <tr>
                                             {['Name', 'Business / Practice', 'Specialty', 'NPI', 'State', 'Excl. Date', 'Status'].map(h => (
-                                                <th key={h} style={styles.th}>{h}</th>
+                                                <th key={h} style={{ ...styles.th, color: t.textSub, borderBottom: `1px solid ${t.border}` }}>{h}</th>
                                             ))}
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {results.map((r, i) => (
                                             <tr key={i}>
-                                                <td style={{ ...styles.td, fontWeight: 600 }}>{r.lastname}{r.firstname ? `, ${r.firstname}` : ''} {r.midname}</td>
-                                                <td style={{ ...styles.td, color: '#64748b' }}>{r.busname || '—'}</td>
-                                                <td style={styles.td}>{r.specialty || '—'}</td>
-                                                <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 12 }}>{r.npi || '—'}</td>
-                                                <td style={styles.td}>{r.state || '—'}</td>
-                                                <td style={styles.td}>{r.excldate || '—'}</td>
-                                                <td style={styles.td}>
+                                                <td style={{ ...styles.td, fontWeight: 600, color: t.text, borderBottom: `1px solid ${t.border}` }}>{r.lastname}{r.firstname ? `, ${r.firstname}` : ''} {r.midname}</td>
+                                                <td style={{ ...styles.td, color: t.textSub, borderBottom: `1px solid ${t.border}` }}>{r.busname || '—'}</td>
+                                                <td style={{ ...styles.td, color: t.text, borderBottom: `1px solid ${t.border}` }}>{r.specialty || '—'}</td>
+                                                <td style={{ ...styles.td, fontFamily: 'monospace', fontSize: 12, color: t.text, borderBottom: `1px solid ${t.border}` }}>{r.npi || '—'}</td>
+                                                <td style={{ ...styles.td, color: t.text, borderBottom: `1px solid ${t.border}` }}>{r.state || '—'}</td>
+                                                <td style={{ ...styles.td, color: t.text, borderBottom: `1px solid ${t.border}` }}>{r.excldate || '—'}</td>
+                                                <td style={{ ...styles.td, borderBottom: `1px solid ${t.border}` }}>
                                                     {r.reindate && r.reindate !== '00000000'
                                                         ? <span style={styles.badgeGreen}>✅ Reinstated</span>
                                                         : <span style={styles.excludedBadge}>⛔ Excluded</span>}
@@ -173,24 +169,23 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
                                 </table>
                             </div>
 
-                            {/* Pagination */}
                             {meta.total_pages > 1 && (
                                 <div style={styles.pagination}>
-                                    <button style={styles.pgBtn} disabled={currentPage === 1}
+                                    <button style={{ ...styles.pgBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}` }} disabled={currentPage === 1}
                                         onClick={() => handlePageChange(currentPage - 1)}>← Prev</button>
 
                                     {getPaginationRange(currentPage, meta.total_pages).map((p, i) =>
                                         p === '…'
-                                            ? <span key={i} style={{ padding: '0 4px', color: '#94a3b8', fontSize: 13 }}>…</span>
+                                            ? <span key={i} style={{ padding: '0 4px', color: t.textMuted, fontSize: 13 }}>…</span>
                                             : <button key={i}
-                                                style={{ ...styles.pgBtn, ...(p === currentPage ? styles.pgBtnActive : {}) }}
+                                                style={{ ...styles.pgBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}`, ...(p === currentPage ? styles.pgBtnActive : {}) }}
                                                 onClick={() => handlePageChange(p)}>{p}</button>
                                     )}
 
-                                    <button style={styles.pgBtn} disabled={currentPage === meta.total_pages}
+                                    <button style={{ ...styles.pgBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}` }} disabled={currentPage === meta.total_pages}
                                         onClick={() => handlePageChange(currentPage + 1)}>Next →</button>
 
-                                    <span style={{ fontSize: 12, color: '#94a3b8', marginLeft: 8 }}>
+                                    <span style={{ fontSize: 12, color: t.textMuted, marginLeft: 8 }}>
                                         Page {currentPage} of {meta.total_pages}
                                     </span>
                                 </div>
@@ -211,12 +206,11 @@ function getPaginationRange(current, total) {
 }
 
 const styles = {
-    card: { background: '#fff', borderRadius: 16, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', maxWidth: 900, margin: '0 auto' },
+    card: { background: '#fff', borderRadius: 16, padding: '2rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', maxWidth: 900, margin: '0 auto', transition: 'background 0.2s' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '1.5rem' },
     heading: { fontSize: '1.6rem', fontWeight: 700, color: '#1e293b', marginBottom: 2 },
     sub: { color: '#64748b', fontSize: '0.875rem', margin: 0 },
     backBtn: { padding: '.35rem .85rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '.85rem', color: '#64748b' },
-    logoutBtn: { padding: '.35rem .85rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '.85rem', color: '#64748b' },
     formCard: { background: '#f8fafc', borderRadius: 12, padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #e2e8f0' },
     sectionTitle: { fontSize: '1rem', fontWeight: 700, color: '#1e293b', marginBottom: 12, marginTop: 0 },
     fieldRow: { display: 'flex', gap: 12, flexWrap: 'wrap' },
@@ -225,7 +219,6 @@ const styles = {
     input: { padding: '0.6rem 1rem', borderRadius: 8, border: '1.5px solid #e2e8f0', fontSize: '0.95rem', outline: 'none' },
     error: { color: '#ef4444', background: '#fef2f2', padding: '0.5rem 1rem', borderRadius: 8, marginTop: 8 },
     searchBtn: { padding: '0.6rem 1.5rem', background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, fontSize: '1rem', cursor: 'pointer', fontWeight: 600 },
-    resetBtn: { padding: '0.6rem 1rem', background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', borderRadius: 8, fontSize: '0.95rem', cursor: 'pointer' },
     resultsCard: { background: '#f8fafc', borderRadius: 12, padding: '1.5rem', border: '1px solid #e2e8f0' },
     clearBox: { background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: 10, padding: '1rem 1.25rem' },
     toolbar: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12, flexWrap: 'wrap', gap: 8 },

@@ -7,6 +7,18 @@ body {
   display: flex;
   justify-content: center;
   padding: 2rem 1rem;
+  transition: background 0.2s;
 }
 
 #root { width: 100%; max-width: 560px; }
+
+/* Dark mode: dim placeholder text so it's visible but not too bright */
+[data-theme="dark"] input::placeholder {
+  color: #475569;
+}
+
+/* Dark mode: style dropdown options */
+[data-theme="dark"] select option {
+  background: #1e293b;
+  color: #e2e8f0;
+}

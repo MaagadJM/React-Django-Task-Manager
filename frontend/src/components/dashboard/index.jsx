@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useTheme } from '../../ThemeContext'
+import { getTheme } from '../../theme'
 
 const modules = [
     {
@@ -24,6 +26,8 @@ const modules = [
 export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
     const [activeTooltip, setActiveTooltip] = useState(null)
     const [showGuestModal, setShowGuestModal] = useState(false)
+    const { dark, toggleDark } = useTheme()
+    const t = getTheme(dark)
 
     function handleModuleClick(modId) {
         if (isGuest && modId === 'tasks') {
@@ -34,14 +38,19 @@ export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
     }
 
     return (
-        <div style={styles.wrapper}>
-            <div style={styles.card}>
+        <div style={{ ...styles.wrapper, background: t.pageBg }}>
+            <div style={{ ...styles.card, background: t.card }}>
                 <div style={styles.header}>
                     <div>
-                        <h1 style={styles.heading}>Welcome back, {user} 👋</h1>
-                        <p style={styles.sub}>Select a system to continue</p>
+                        <h1 style={{ ...styles.heading, color: t.text }}>Welcome back, {user} 👋</h1>
+                        <p style={{ ...styles.sub, color: t.textSub }}>Select a system to continue</p>
                     </div>
-                    <button onClick={onLogout} style={styles.logoutBtn}>Log out</button>
+                    <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                        <button onClick={toggleDark} title="Toggle dark mode" style={{ ...styles.iconBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}` }}>
+                            {dark ? '☀️' : '🌙'}
+                        </button>
+                        <button onClick={onLogout} style={{ ...styles.logoutBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}` }}>Log out</button>
+                    </div>
                 </div>
 
                 <div style={styles.grid}>
@@ -49,7 +58,7 @@ export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
                         <button
                             key={mod.id}
                             onClick={() => handleModuleClick(mod.id)}
-                            style={{ ...styles.moduleCard, borderColor: mod.color, background: mod.bg }}
+                            style={{ ...styles.moduleCard, borderColor: mod.color, background: dark ? t.card : mod.bg }}
                         >
                             <div style={styles.cardTop}>
                                 <span style={styles.icon}>{mod.icon}</span>
@@ -66,7 +75,7 @@ export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
                                 </div>
                             </div>
                             <h2 style={{ ...styles.modTitle, color: mod.color }}>{mod.title}</h2>
-                            <p style={styles.modDesc}>{mod.description}</p>
+                            <p style={{ ...styles.modDesc, color: t.textSub }}>{mod.description}</p>
                             <span style={{ ...styles.openBtn, background: mod.color }}>Open →</span>
                         </button>
                     ))}
@@ -75,14 +84,14 @@ export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
 
             {showGuestModal && (
                 <div style={styles.modalOverlay}>
-                    <div style={styles.modal}>
-                        <h2 style={styles.modalTitle}>Account required</h2>
-                        <p style={styles.modalText}>
+                    <div style={{ ...styles.modal, background: t.card }}>
+                        <h2 style={{ ...styles.modalTitle, color: t.text }}>Account required</h2>
+                        <p style={{ ...styles.modalText, color: t.textSub }}>
                             Task Manager saves your tasks to your account. Create a free account or sign in to use this feature.
                         </p>
                         <div style={styles.modalBtns}>
                             <button onClick={onLogout} style={styles.modalPrimaryBtn}>Sign In / Register</button>
-                            <button onClick={() => setShowGuestModal(false)} style={styles.modalCancelBtn}>Cancel</button>
+                            <button onClick={() => setShowGuestModal(false)} style={{ ...styles.modalCancelBtn, background: t.btnBg, color: t.btnText, border: `1px solid ${t.btnBorder}` }}>Cancel</button>
                         </div>
                     </div>
                 </div>
@@ -92,12 +101,13 @@ export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
 }
 
 const styles = {
-    wrapper: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9' },
-    card: { background: '#fff', borderRadius: 20, padding: '2.5rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%', maxWidth: 700 },
+    wrapper: { minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f1f5f9', transition: 'background 0.2s' },
+    card: { background: '#fff', borderRadius: 20, padding: '2.5rem', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', width: '100%', maxWidth: 700, transition: 'background 0.2s' },
     header: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '2rem' },
     heading: { fontSize: '1.75rem', fontWeight: 700, color: '#1e293b', marginBottom: 4 },
     sub: { color: '#64748b', fontSize: '0.9rem', margin: 0 },
     logoutBtn: { padding: '.35rem .85rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '.85rem', color: '#64748b' },
+    iconBtn: { padding: '.35rem .5rem', borderRadius: 8, border: '1px solid #e2e8f0', background: '#fff', cursor: 'pointer', fontSize: '.9rem', lineHeight: 1 },
     grid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 16 },
     moduleCard: { display: 'flex', flexDirection: 'column', alignItems: 'flex-start', padding: '1.5rem', borderRadius: 16, border: '2px solid', cursor: 'pointer', textAlign: 'left', gap: 8 },
     cardTop: { display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', width: '100%' },

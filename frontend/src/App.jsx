@@ -4,8 +4,9 @@ import Register from './components/Register'
 import Dashboard from './components/dashboard/index.jsx'
 import TaskManager from './components/task-manager/index.jsx'
 import OIGScreener from './components/oig-screener/index.jsx'
+import { ThemeProvider } from './ThemeContext'
 
-export default function App() {
+function App() {
   const [user, setUser] = useState(localStorage.getItem('username'))
   const [isGuest, setIsGuest] = useState(false)
   const [showReg, setShowReg] = useState(false)
@@ -42,4 +43,8 @@ export default function App() {
   if (!activeModule) return <Dashboard user={displayUser} isGuest={isGuest} onSelectModule={setActiveModule} onLogout={logout} />
   if (activeModule === 'tasks') return <TaskManager user={displayUser} onBack={() => setActiveModule(null)} onLogout={logout} />
   if (activeModule === 'oig') return <OIGScreener user={displayUser} isGuest={isGuest} onBack={() => setActiveModule(null)} onLogout={logout} />
+}
+
+export default function AppWithTheme() {
+  return <ThemeProvider><App /></ThemeProvider>
 }
