@@ -27,6 +27,7 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
         try {
             const res = await api.searchOIG({ ...form, page, pageSize: size })
             const data = await res.json()
+            if (!res.ok) { setError(data.error || data.detail || 'Search failed.'); return }
             if (data.error) { setError(data.error); return }
             setResults(data.results)
             setMeta(data)
