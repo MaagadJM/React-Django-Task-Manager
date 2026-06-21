@@ -4,6 +4,7 @@ backend/db.sqlite3
 backend/__pycache__/
 backend/tasks/__pycache__/
 backend/myproject/__pycache__/
+backend/*.csv
 
 # React
 frontend/node_modules/
