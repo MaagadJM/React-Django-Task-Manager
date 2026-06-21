@@ -1,4 +1,4 @@
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = (import.meta.env.VITE_API_BASE_URL || 'http://127.0.0.1:8000') + '/api';
 
 function getToken() {
   return localStorage.getItem('access_token');
@@ -25,14 +25,14 @@ async function request(path, options = {}) {
 
 export const api = {
   login: (username, password) =>
-    fetch('http://127.0.0.1:8000/api/auth/login/', {
+    fetch(`${BASE_URL}/auth/login/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password }),
     }),
 
   register: (username, password, confirm_password) =>
-    fetch('http://127.0.0.1:8000/api/auth/register/', {
+    fetch(`${BASE_URL}/auth/register/`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password, confirm_password }),
