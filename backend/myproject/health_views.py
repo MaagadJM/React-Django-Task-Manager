@@ -1,4 +1,6 @@
-import requests as http_requests
+import json
+from urllib.request import urlopen, Request
+from urllib.error import URLError
 from django.conf import settings
 from django.core.cache import cache
 from rest_framework.decorators import api_view, permission_classes
@@ -20,12 +22,13 @@ def health_check(request):
         return Response(cached)
 
     try:
-        resp = http_requests.get(
+        req = Request(
             f'https://www.pythonanywhere.com/api/v0/user/{username}/cpu/',
-            headers={'Authorization': f'Token {token}'},
-            timeout=5
+            headers={'Authorization': f'Token {token}'}
         )
-        data = resp.json()
+        with urlopen(req, timeout=5) as resp:
+            data = json.loads(resp.read().decode())
+
         limit = data.get('daily_cpu_limit_seconds', 100)
         used = data.get('daily_cpu_total_usage_seconds', 0)
         percent = round((used / limit) * 100, 1) if limit else 0
@@ -45,5 +48,5 @@ def health_check(request):
         }
         cache.set('pa_cpu_usage', result, 300)  # cache for 5 minutes
         return Response(result)
-    except Exception:
+    except (URLError, Exception):
         return Response({'status': 'ok', 'cpu_percent': 0, 'configured': True})
