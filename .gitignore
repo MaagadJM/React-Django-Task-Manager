@@ -5,6 +5,7 @@ backend/__pycache__/
 backend/tasks/__pycache__/
 backend/myproject/__pycache__/
 backend/*.csv
+backend/staticfiles/
 
 # React
 frontend/node_modules/
