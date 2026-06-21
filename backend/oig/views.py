@@ -1,12 +1,12 @@
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from django.db.models import Q
 from .models import ExcludedIndividual, SearchLog
 from .serializers import ExcludedIndividualSerializer
 
 @api_view(['GET'])
-@permission_classes([IsAuthenticated])
+@permission_classes([AllowAny])
 def search_oig(request):
     last_name  = request.GET.get('lastName',  '').strip()
     first_name = request.GET.get('firstName', '').strip()
@@ -48,13 +48,14 @@ def search_oig(request):
     offset      = (page - 1) * page_size
     results     = list(qs[offset : offset + page_size])
 
-    SearchLog.objects.create(
-        user=request.user,
-        first_name=first_name,
-        last_name=last_name,
-        npi=npi,
-        results_count=len(results)
-    )
+    if request.user.is_authenticated:
+        SearchLog.objects.create(
+            user=request.user,
+            first_name=first_name,
+            last_name=last_name,
+            npi=npi,
+            results_count=len(results)
+        )
     return Response({
         'results':      ExcludedIndividualSerializer(results, many=True).data,
         'total_count':  total_count,

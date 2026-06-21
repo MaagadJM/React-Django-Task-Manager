@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { api } from '../api';
 
-export default function Login({ onLogin, onGoToRegister, successMessage }) {
+export default function Login({ onLogin, onGuestLogin, onGoToRegister, successMessage }) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
@@ -64,6 +64,10 @@ export default function Login({ onLogin, onGoToRegister, successMessage }) {
           </button>
         </form>
 
+        <button onClick={onGuestLogin} style={styles.guestBtn}>
+          Continue as Guest
+        </button>
+
         <p style={styles.link}>
           Don't have an account?{' '}
           <span onClick={onGoToRegister} style={styles.anchor}>Register</span>
@@ -86,4 +90,5 @@ const styles = {
   error: { color: '#e53e3e', fontSize: '.875rem', margin: 0 },
   link: { textAlign: 'center', marginTop: '1.25rem', fontSize: '.875rem', color: '#888' },
   anchor: { color: '#4f46e5', cursor: 'pointer', fontWeight: 600 },
+  guestBtn: { marginTop: '0.75rem', width: '100%', padding: '.75rem', borderRadius: '8px', background: '#fff', color: '#64748b', border: '1px solid #ddd', fontSize: '1rem', cursor: 'pointer' },
 };

@@ -3,7 +3,7 @@ import { api } from '../../api'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 
-export default function OIGScreener({ user, onBack, onLogout }) {
+export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
     const [form, setForm] = useState({ firstName: '', lastName: '', npi: '', busName: '' })
     const [results, setResults] = useState([])
     const [meta, setMeta] = useState({ total_count: 0, total_pages: 1, page: 1, page_size: 20 })
@@ -77,7 +77,7 @@ export default function OIGScreener({ user, onBack, onLogout }) {
                 </div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <span style={{ color: '#64748b', fontSize: '1rem', fontWeight: 'bold' }}>👤 {user}</span>
-                    <button onClick={onLogout} style={styles.logoutBtn}>Log out</button>
+                    <button onClick={onLogout} style={styles.logoutBtn}>{isGuest ? 'Sign In' : 'Log out'}</button>
                 </div>
             </div>
 

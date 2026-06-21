@@ -43,9 +43,11 @@ export const api = {
   updateTask: (id, data)   => request(`/tasks/${id}/`, { method: 'PATCH',  body: JSON.stringify(data) }),
   deleteTask: (id)         => request(`/tasks/${id}/`, { method: 'DELETE' }),
 
-  searchOIG: ({ firstName, lastName, npi, busName, page = 1, pageSize = 20 }) =>
-    fetch(`${BASE_URL}/oig/search/?firstName=${firstName}&lastName=${lastName}&npi=${npi}&busName=${busName}&page=${page}&pageSize=${pageSize}`, {
-      headers: { Authorization: `Bearer ${localStorage.getItem('access_token')}` },
-    }),
+  searchOIG: ({ firstName, lastName, npi, busName, page = 1, pageSize = 20 }) => {
+    const token = localStorage.getItem('access_token')
+    return fetch(`${BASE_URL}/oig/search/?firstName=${firstName}&lastName=${lastName}&npi=${npi}&busName=${busName}&page=${page}&pageSize=${pageSize}`, {
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+    })
+  },
   
 };

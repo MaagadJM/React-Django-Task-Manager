@@ -7,6 +7,7 @@ import OIGScreener from './components/oig-screener/index.jsx'
 
 export default function App() {
   const [user, setUser] = useState(localStorage.getItem('username'))
+  const [isGuest, setIsGuest] = useState(false)
   const [showReg, setShowReg] = useState(false)
   const [loginMsg, setLoginMsg] = useState('')
   const [activeModule, setActiveModule] = useState(null)
@@ -15,10 +16,11 @@ export default function App() {
     localStorage.removeItem('access_token')
     localStorage.removeItem('username')
     setUser(null)
+    setIsGuest(false)
     setActiveModule(null)
   }
 
-  if (!user) {
+  if (!user && !isGuest) {
     if (showReg) return (
       <Register onGoToLogin={(registered) => {
         setShowReg(false)
@@ -28,13 +30,16 @@ export default function App() {
     return (
       <Login
         onLogin={setUser}
+        onGuestLogin={() => setIsGuest(true)}
         successMessage={loginMsg}
         onGoToRegister={() => { setLoginMsg(''); setShowReg(true) }}
       />
     )
   }
 
-  if (!activeModule) return <Dashboard user={user} onSelectModule={setActiveModule} onLogout={logout} />
-  if (activeModule === 'tasks') return <TaskManager user={user} onBack={() => setActiveModule(null)} onLogout={logout} />
-  if (activeModule === 'oig') return <OIGScreener user={user} onBack={() => setActiveModule(null)} onLogout={logout} />
+  const displayUser = isGuest ? 'Guest' : user
+
+  if (!activeModule) return <Dashboard user={displayUser} isGuest={isGuest} onSelectModule={setActiveModule} onLogout={logout} />
+  if (activeModule === 'tasks') return <TaskManager user={displayUser} onBack={() => setActiveModule(null)} onLogout={logout} />
+  if (activeModule === 'oig') return <OIGScreener user={displayUser} isGuest={isGuest} onBack={() => setActiveModule(null)} onLogout={logout} />
 }

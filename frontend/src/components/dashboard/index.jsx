@@ -21,8 +21,17 @@ const modules = [
     },
 ]
 
-export default function Dashboard({ user, onSelectModule, onLogout }) {
+export default function Dashboard({ user, isGuest, onSelectModule, onLogout }) {
     const [activeTooltip, setActiveTooltip] = useState(null)
+    const [showGuestModal, setShowGuestModal] = useState(false)
+
+    function handleModuleClick(modId) {
+        if (isGuest && modId === 'tasks') {
+            setShowGuestModal(true)
+        } else {
+            onSelectModule(modId)
+        }
+    }
 
     return (
         <div style={styles.wrapper}>
@@ -39,7 +48,7 @@ export default function Dashboard({ user, onSelectModule, onLogout }) {
                     {modules.map(mod => (
                         <button
                             key={mod.id}
-                            onClick={() => onSelectModule(mod.id)}
+                            onClick={() => handleModuleClick(mod.id)}
                             style={{ ...styles.moduleCard, borderColor: mod.color, background: mod.bg }}
                         >
                             <div style={styles.cardTop}>
@@ -63,6 +72,21 @@ export default function Dashboard({ user, onSelectModule, onLogout }) {
                     ))}
                 </div>
             </div>
+
+            {showGuestModal && (
+                <div style={styles.modalOverlay}>
+                    <div style={styles.modal}>
+                        <h2 style={styles.modalTitle}>Account required</h2>
+                        <p style={styles.modalText}>
+                            Task Manager saves your tasks to your account. Create a free account or sign in to use this feature.
+                        </p>
+                        <div style={styles.modalBtns}>
+                            <button onClick={onLogout} style={styles.modalPrimaryBtn}>Sign In / Register</button>
+                            <button onClick={() => setShowGuestModal(false)} style={styles.modalCancelBtn}>Cancel</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
@@ -84,4 +108,11 @@ const styles = {
     modTitle: { fontSize: '1.1rem', fontWeight: 700, margin: 0 },
     modDesc: { color: '#64748b', fontSize: '0.85rem', margin: 0, flex: 1 },
     openBtn: { marginTop: 8, padding: '0.4rem 1rem', borderRadius: 8, color: '#fff', fontSize: '0.85rem', fontWeight: 600, border: 'none', cursor: 'pointer' },
+    modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 100 },
+    modal: { background: '#fff', borderRadius: 16, padding: '2rem', maxWidth: 380, width: '90%', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
+    modalTitle: { fontSize: '1.2rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.75rem' },
+    modalText: { color: '#64748b', fontSize: '0.9rem', lineHeight: 1.6, margin: '0 0 1.5rem' },
+    modalBtns: { display: 'flex', gap: 8 },
+    modalPrimaryBtn: { flex: 1, padding: '0.65rem', borderRadius: 8, background: '#6366f1', color: '#fff', border: 'none', fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer' },
+    modalCancelBtn: { padding: '0.65rem 1rem', borderRadius: 8, background: '#fff', color: '#64748b', border: '1px solid #e2e8f0', fontSize: '0.9rem', cursor: 'pointer' },
 }
