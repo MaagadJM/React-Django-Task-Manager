@@ -5,6 +5,22 @@ import { getTheme } from '../../theme'
 
 const PAGE_SIZE_OPTIONS = [10, 20, 50, 100]
 
+function getStoredUsage() {
+    const today = new Date().toISOString().slice(0, 10)
+    try {
+        const stored = JSON.parse(localStorage.getItem('oig_search_usage') || '{}')
+        if (stored.date !== today) return 0
+        return stored.count || 0
+    } catch { return 0 }
+}
+
+function incrementStoredUsage() {
+    const today = new Date().toISOString().slice(0, 10)
+    const count = getStoredUsage() + 1
+    localStorage.setItem('oig_search_usage', JSON.stringify({ date: today, count }))
+    return count
+}
+
 export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
     const [form, setForm] = useState({ firstName: '', lastName: '', npi: '', busName: '' })
     const [results, setResults] = useState([])
@@ -14,6 +30,9 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
     const [loading, setLoading] = useState(false)
     const [error, setError] = useState('')
     const [searched, setSearched] = useState(false)
+    const [showRateLimitModal, setShowRateLimitModal] = useState(false)
+    const [searchesUsed, setSearchesUsed] = useState(() => getStoredUsage())
+    const DAILY_LIMIT = isGuest ? 20 : 100
     const { dark, toggleDark } = useTheme()
     const t = getTheme(dark)
 
@@ -27,12 +46,14 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
         try {
             const res = await api.searchOIG({ ...form, page, pageSize: size })
             const data = await res.json()
+            if (res.status === 429) { setShowRateLimitModal(true); setSearchesUsed(DAILY_LIMIT); return }
             if (!res.ok) { setError(data.error || data.detail || 'Search failed.'); return }
             if (data.error) { setError(data.error); return }
             setResults(data.results)
             setMeta(data)
             setCurrentPage(data.page)
             setSearched(true)
+            setSearchesUsed(incrementStoredUsage())
         } catch {
             setError('Could not connect to screening service.')
         } finally {
@@ -109,14 +130,37 @@ export default function OIGScreener({ user, isGuest, onBack, onLogout }) {
                         </div>
                     </div>
                     {error && <p style={styles.error}>{error}</p>}
-                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                        <button type="submit" style={styles.searchBtn} disabled={loading}>
-                            {loading ? 'Searching…' : '🔍 Search'}
-                        </button>
-                        {searched && <button type="button" onClick={handleReset} style={btnStyle}>Reset</button>}
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12, flexWrap: 'wrap', gap: 8 }}>
+                        <div style={{ display: 'flex', gap: 8 }}>
+                            <button type="submit" style={styles.searchBtn} disabled={loading}>
+                                {loading ? 'Searching…' : '🔍 Search'}
+                            </button>
+                            {searched && <button type="button" onClick={handleReset} style={btnStyle}>Reset</button>}
+                        </div>
+                        <div style={{ ...styles.usagePill, background: searchesUsed >= DAILY_LIMIT ? '#fef2f2' : dark ? '#1e3a4a' : '#f0f9ff', color: searchesUsed >= DAILY_LIMIT ? '#ef4444' : '#0ea5e9', border: `1px solid ${searchesUsed >= DAILY_LIMIT ? '#fecaca' : '#bae6fd'}` }}>
+                            {DAILY_LIMIT - searchesUsed > 0
+                                ? `${DAILY_LIMIT - searchesUsed} of ${DAILY_LIMIT} searches remaining today`
+                                : 'Daily limit reached'}
+                        </div>
                     </div>
                 </form>
             </div>
+
+            {showRateLimitModal && (
+                <div style={styles.modalOverlay}>
+                    <div style={{ ...styles.modalBox, background: t.card, border: `1px solid ${t.border}` }}>
+                        <div style={styles.modalIcon}>🚫</div>
+                        <h3 style={{ ...styles.modalTitle, color: t.text }}>Daily Search Limit Reached</h3>
+                        <p style={{ ...styles.modalBody, color: t.textSub }}>
+                            You've used up your daily searches for the OIG Exclusion Screener.
+                            Your limit will reset at midnight and you'll be able to search again tomorrow.
+                        </p>
+                        <button onClick={() => setShowRateLimitModal(false)} style={styles.modalBtn}>
+                            Got it
+                        </button>
+                    </div>
+                </div>
+            )}
 
             {searched && (
                 <div style={{ ...styles.resultsCard, background: t.cardAlt, border: `1px solid ${t.border}` }}>
@@ -232,4 +276,11 @@ const styles = {
     pagination: { display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 4, marginTop: 16, flexWrap: 'wrap' },
     pgBtn: { minWidth: 32, height: 28, padding: '0 8px', fontSize: 12, border: '1px solid #e2e8f0', borderRadius: 6, background: '#fff', cursor: 'pointer', color: '#475569' },
     pgBtnActive: { background: '#0ea5e9', color: '#fff', borderColor: '#0ea5e9', fontWeight: 600 },
+    modalOverlay: { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000 },
+    modalBox: { background: '#fff', borderRadius: 16, padding: '2rem', maxWidth: 380, width: '90%', textAlign: 'center', boxShadow: '0 8px 32px rgba(0,0,0,0.18)' },
+    modalIcon: { fontSize: '2.5rem', marginBottom: '0.75rem' },
+    modalTitle: { fontSize: '1.15rem', fontWeight: 700, color: '#1e293b', margin: '0 0 0.5rem' },
+    modalBody: { fontSize: '0.875rem', color: '#64748b', lineHeight: 1.6, margin: '0 0 1.25rem' },
+    modalBtn: { padding: '0.6rem 2rem', background: '#0ea5e9', color: '#fff', border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer' },
+    usagePill: { fontSize: '0.78rem', fontWeight: 600, padding: '0.3rem 0.85rem', borderRadius: 20 },
 }

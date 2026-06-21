@@ -49,5 +49,6 @@ export const api = {
       headers: token ? { Authorization: `Bearer ${token}` } : {},
     })
   },
-  
+
+  health: () => fetch(`${BASE_URL}/health/`),
 };

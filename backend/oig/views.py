@@ -1,12 +1,22 @@
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, throttle_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from rest_framework.throttling import AnonRateThrottle, UserRateThrottle
 from django.db.models import Q
 from .models import ExcludedIndividual, SearchLog
 from .serializers import ExcludedIndividualSerializer
 
+
+class OIGAnonThrottle(AnonRateThrottle):
+    scope = 'oig_anon'
+
+class OIGUserThrottle(UserRateThrottle):
+    scope = 'oig_user'
+
+
 @api_view(['GET'])
 @permission_classes([AllowAny])
+@throttle_classes([OIGAnonThrottle, OIGUserThrottle])
 def search_oig(request):
     last_name  = request.GET.get('lastName',  '').strip()
     first_name = request.GET.get('firstName', '').strip()

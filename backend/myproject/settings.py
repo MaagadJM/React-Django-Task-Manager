@@ -73,12 +73,19 @@ REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),
+    'DEFAULT_THROTTLE_RATES': {
+        'oig_anon': '20/day',
+        'oig_user': '100/day',
+    },
 }
 
 SIMPLE_JWT = {
     'ACCESS_TOKEN_LIFETIME': timedelta(hours=8),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=7),
 }
+
+PYTHONANYWHERE_USERNAME = os.environ.get('PYTHONANYWHERE_USERNAME', '')
+PYTHONANYWHERE_API_TOKEN = os.environ.get('PYTHONANYWHERE_API_TOKEN', '')
 
 # Only these usernames can log in
 # ALLOWED_USERS = ['jude', 'admin']

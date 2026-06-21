@@ -2,6 +2,7 @@ from django.contrib import admin
 from django.urls import path, include
 from rest_framework_simplejwt.views import TokenRefreshView
 from .auth_views import WhitelistTokenObtainView, RegisterView
+from .health_views import health_check
 
 urlpatterns = [
     path('admin/',            admin.site.urls),
@@ -10,4 +11,5 @@ urlpatterns = [
     path('api/auth/register/', RegisterView.as_view(),            name='register'),
     path('api/', include('tasks.urls')),
     path('api/oig/', include('oig.urls')),
+    path('api/health/', health_check, name='health_check'),
 ]
